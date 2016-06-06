@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Game Project Shell</title>
+    <script type="text/javascript" src="./projectmanager.js"></script>
+    <script type="text/javascript" src="./agent.js"></script>
+</head>
+<body>
+    <div>Right click and "Inspect Element".  Select the Console Tab to see the debugger output.</div>
+
+    <canvas id="gameWorld" width="800" height="800" style="border: 1px solid brown; background: white"></canvas>
+	<br><b><u>Circles</u></b>
+	<br>Green - Innocents (no weapon)
+	<br>Blue - Sheriffs (has gun)
+	<br>Red - Killers (has knife)
+	<br>
+	<br>This simulation of agents is a scenario where there are 3 types of 
+	agents listed above. No other agents know what type other agents are.
+	Agents use a trust system to determine who they can trust. Each agent
+	keeps track of their trust of other agents. Killers will try to kill
+	all other agents on the map (except other killers). They try to pick off
+	agents that are not surrounded by many other agents. Sheriffs will shoot
+	and kill anybody they do not trust. If they witness a murder from a killer,
+	this spikes the trust negatively and they will pursue the killer. Killers
+	do not know who the sheriffs are, so they hope they get lucky with finding
+	them first.
+	<br>
+	<br><b>Trust</b>
+	<br>Individual trust can be raised or lower through certain triggers. If
+	an agent can't "see" another agent, they lose trust on that agent. If
+	they can see that agent, they gain trust. If trust has fallen negative
+	for another agent, it will always keep going lower, just at a slower
+	rate if they're in visual range. Agents also like to gossip about other
+	agents. If agents are in range, they will share their trust ratings with other
+	agents to influence their trust scores.
+	<br>The higher the trust is, the more likely the agent will follow the
+	agent they trust. If it is negative, the higher magnitude of the negative,
+	the more likely the agent will run away in the other direction.
+	<br>If any agents witness a murder, they have a massive negative spike on
+	that agent and will run away and inform other agents. Since no agents trust
+	other agents, they take some convincing.
+	<br>
+	<br><b>About</b>
+	<br>The only code I used that was not mine was GameEngine, Entity and AssetManager.
+	<br>
+	<br>This was a very interesting simulation. When I had slightly higher % chance to follow formula 
+	(  Math.log10(trustValue * 0.05 + 2.7) * 100  ) I noticed that agents would form groups with other
+	agents that they trusted. They would then stick to their group and avoid other groups. A very
+	interesting simulation where you don't know who you can trust, so you feel more comfortable with
+	large groups, and groups with people you are familiar with.
+	<br>
+	<br> <b>Bug:</b> Sometimes sheriff's trust doesn't update properly when they witness a murder, 
+	not sure why. Some collisions aren't perfect either.
+	<br>
+	<br>
+	<br>
+	<br>
+
+	
+	
+</body>
+</html>
