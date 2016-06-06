@@ -26,6 +26,7 @@ function Agent(game, id, hasGun, hasKnife) {
 	this.visualRadius = 150;
 	this.trust = [];
 	this.hasGun = hasGun;
+	this.isGoingToShoot = false;
 	this.hasKnife = hasKnife;
 	this.maxSpeed = -1.5;
 	this.currentSpeed = 0;
@@ -44,8 +45,8 @@ Agent.prototype.init = function () {
 }
 
 Agent.prototype.spawnRandom = function () {
-	this.x = Math.floor(Math.random() * (800 - (RADIUS)) + (RADIUS));
-	this.y = Math.floor(Math.random() * (800 - (RADIUS)) + (RADIUS));
+	this.x = Math.floor(Math.random() * (800 - (RADIUS*2)) + (RADIUS));
+	this.y = Math.floor(Math.random() * (800 - (RADIUS*2)) + (RADIUS));
 	for (var i = 0; i < this.game.entities.length; i++) {
 		if (this === this.game.entities[i]) {continue;}
 		var a = {x: this.x, y: this.y};
@@ -77,13 +78,19 @@ Agent.prototype.update = function () {
 					this.trust[this.game.entities[i].id] != undefined &&
 					this.trust[this.game.entities[i].id].value < -1000 ) {
 				this.following = this.game.entities[i];
+				//console.log("locked in: " + this.following.id);
+				this.isGoingToShoot = true;
+				this.maxSpeed = -2.5;
+				i = this.game.entities.length;
 			} else {
 				this.following = null;
+				this.isGoingToShoot = false;
+				this.maxSpeed = -1.5;
 			}
 		}
 		this.behaviorCount++;
 		this.move();
-		if (this.following != null) {
+		if (this.following != null && this.isGoingToShoot) {
 			console.log("Sheriff Chasing");
 			var a = {x: this.x, y: this.y};
 			var b = {x: this.following.x, y: this.following.y};
@@ -109,7 +116,8 @@ Agent.prototype.update = function () {
 				this.targetList.push(this.game.entities[i]);
 			}
 		}
-		if (this.targetList.length <= 3 && this.targetList.length > 0 && !this.targetList[0].hasKnife) {
+		var boldness = 100 / this.game.entities.length;
+		if (this.targetList.length <= boldness && this.targetList.length > 0 && !this.targetList[0].hasKnife) {
 			this.following = this.targetList[0];
 		} else {
 			this.following = null;
@@ -129,6 +137,7 @@ Agent.prototype.update = function () {
 			var b = {x: this.following.x, y: this.following.y};
 			if (getDistance(a, b) < RADIUS * 2 + 5) {
 				// KILL IT
+				console.log("Stabbed " + this.following.id);
 				this.following.removeFromWorld = true;
 				for (var i = 0; i < this.game.entities.length; i++) {
 					if (this.isVisible(this.game.entities[i]) && this.game.entities[i].id != this.following.id) {
@@ -136,7 +145,12 @@ Agent.prototype.update = function () {
 						if (this.game.entities[i].hasGun) {
 							console.log("alerted sheriff");
 						}
-						this.game.entities[i].trust[this.id].value = -2000
+						if (this.game.entities[i].trust[this.id] != undefined) {
+							this.game.entities[i].trust[this.id].value = -3000
+						} else {
+							this.game.entities[i].trust[this.id] = {value: -3000, agent: this.game.entities[i]}
+						}
+						
 					}
 				}
 				this.following = null;
@@ -212,24 +226,27 @@ Agent.prototype.move = function () {
 	}
 	
 	// Check if in range of untrusted agents
-	for (var i = 0; i < this.game.entities.length; i++) {
-		if (this.isVisible(this.game.entities[i]) &&
-				this.trust[this.game.entities[i].key] != undefined &&
-				this.trust[this.game.entities[i].key].value < 0) {
-			
-			var a = {x: this.x, y: this.y};
-			var b = {x: this.game.entities[i].x, y: this.game.entities[i].y};
-			var trustValue = this.trust[this.game.entities[i].key].value;
-			var percentChance = Math.log10(Math.abs(trustValue) * 0.1 + 1) * 100;
-			
-			if (Math.random() * 100 < percentChance) {
-				this.angle = getDirection(a, b) + Math.PI;
-				this.velocity.x = this.maxSpeed * Math.cos(angle);
-				this.velocity.y = this.maxSpeed * Math.sin(angle);
+	if (!this.hasGun && !this.hasKnife) {
+		for (var i = 0; i < this.game.entities.length; i++) {
+			if (this.isVisible(this.game.entities[i]) &&
+					this.trust[this.game.entities[i].id] != undefined &&
+					this.trust[this.game.entities[i].id].value < -20) {
+
+				var a = {x: this.x, y: this.y};
+				var b = {x: this.game.entities[i].x, y: this.game.entities[i].y};
+				var trustValue = this.trust[this.game.entities[i].id].value;
+				var percentChance = Math.log10(Math.abs(trustValue) * 0.1 + 1) * 100;
+
+				if (Math.random() * 100 < percentChance) {
+					//console.log("running scared")
+					this.angle = getDirection(a, b) + Math.PI;
+					this.velocity.x = this.maxSpeed * Math.cos(this.angle);
+					this.velocity.y = this.maxSpeed * Math.sin(this.angle);
+				}
 			}
 		}
 	}
-	
+
 	this.updatePositionWithCollision();
 }
 
@@ -349,7 +366,7 @@ Agent.prototype.updateTrust = function (otherAgent) {
 }
 
 Agent.prototype.isVisible = function (other) {
-	if (this === other) {return false;}
+	if (this.id === other.id) {return false;}
 	if (getDistance({x: this.x, y: this.y}, {x: other.x, y: other.y}) < this.visualRadius) {
 		//console.log(this.id + " " + other.id + " is visible");
 		return true;

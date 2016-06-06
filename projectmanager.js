@@ -113,7 +113,7 @@ GameEngine.prototype.startInput = function () {
 }
 
 GameEngine.prototype.addEntity = function (entity) {
-    console.log('added entity');
+    //console.log('added entity');
     this.entities.push(entity);
 }
 
@@ -219,23 +219,30 @@ ASSET_MANAGER.downloadAll(function () {
     var ctx = canvas.getContext('2d');
 
     var gameEngine = new GameEngine();
-    var gameboard = new GameBoard();
+    //var gameboard = new GameBoard();
     
+    
+    var innocents = 40;
+    var sheriffs = 2;
+    var killers = 4;
     // Unarmed agents
-    for (var count = 0; count < 40; count++) {
+    for (var count = 0; count < innocents; count++) {
     	var agent = new Agent(gameEngine, count);
+    	console.log("Innocent: " + agent.id);
     	gameEngine.addEntity(agent);
     }
     
     // Sheriff agents (have gun, can kill killers)
-    for (var count = 0; count < 2; count++) {
+    for (var count = innocents; count < innocents + sheriffs; count++) {
     	var agent = new Agent(gameEngine, count, true, false);
+    	console.log("Sheriff: " + agent.id);
     	gameEngine.addEntity(agent);
     }
     
  // Sheriff agents (have gun, can kill killers)
-    for (var count = 0; count < 4; count++) {
+    for (var count = innocents + sheriffs; count < innocents + sheriffs + killers; count++) {
     	var agent = new Agent(gameEngine, count, false, true);
+    	console.log("Killer: " + agent.id);
     	gameEngine.addEntity(agent);
     }
     
