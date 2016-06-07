@@ -2,14 +2,22 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Game Project Shell</title>
+    <title>Interaction & Database</title>
     <script type="text/javascript" src="./projectmanager.js"></script>
     <script type="text/javascript" src="./agent.js"></script>
 </head>
 <body>
-    <div>Right click and "Inspect Element".  Select the Console Tab to see the debugger output.</div>
+	<div><b><font size="4">Assignment 2 - Interaction</b> & <b>Assignment 3 - Database</b></font> (scroll down for info)</div>
 
     <canvas id="gameWorld" width="800" height="800" style="border: 1px solid brown; background: white"></canvas>
+	 <div>
+        <button id="save">Save</button>
+        <button id="load">Load</button>
+    </div>
+   
+    <script type="text/javascript" src="http://76.28.150.193:8888/socket.io/socket.io.js"></script>
+	<br>
+	<br>
 	<br><b><u>Circles</u></b>
 	<br>Green - Innocents (no weapon)
 	<br>Blue - Sheriffs (has gun)
@@ -55,7 +63,12 @@
 	<br>
 	<br> <b>Bug:</b> Some collisions are not perfect
 	<br>
-	<br>
+	<br><b>Assignment 3 additions:</b>
+	<br>Converted agents to a saveState version of agents. This replaced references to other agents 
+	(used for following and the trust system) with placeholder IDs. Only took the values needed to
+	be saved (which was most of them). When reloading the saveState data, had to convert the placeholder
+	IDs back to their references by matching them up with their correct reference. Was way more difficult
+	to do than I was expecting. Maybe next time I will design my simulation with saving state in mind.
 	<br>
 	<br>
 

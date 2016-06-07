@@ -15,6 +15,96 @@ function getDirection(a, b) {
     return Math.atan2(dy, dx);
 }
 
+function AgentSaveState(agent) {
+	this.id = agent.id;
+	this.x = agent.x;
+	this.y = agent.y;
+	this.trust = [];
+	for (let key in agent.trust) {
+		if (agent.trust[key].agent === undefined) { continue; }
+		if (!agent.trust.hasOwnProperty(key) || agent.trust[key].agent.removeFromWorld === true) { continue; }
+		var tempValue = Math.floor(agent.trust[key].value);
+		var tempID = agent.trust[key].agent.id;
+		this.trust[key] = {value: tempValue, agentID: tempID};
+		//console.log("saved trust: " + this.trust[key].value + ", " + this.trust[key].agentID);
+	}
+	this.hasGun = agent.hasGun;
+	this.isGoingToShoot = agent.isGoingToShoot;
+	this.hasKnife = agent.hasKnife;
+	this.maxSpeed = agent.maxSpeed;
+	this.velocity = {x: agent.velocity.x, y: agent.velocity.y};
+	if (agent.following === null) {
+		this.following = null;
+	} else {
+		this.following = agent.following.id;
+	}
+	this.angle = agent.angle;
+	this.behaviorCount = agent.behaviorCount;
+}
+
+function convertBack (agentSave, game) {
+	var agent = new Agent(game, agentSave.id, agentSave.hasGun, agentSave.hasKnife);
+	agent.x = agentSave.x;
+	agent.y = agentSave.y;
+	for (let key in agentSave.trust) {
+		//console.log(key + " " + agentSave.trust[key]);
+		if (agentSave.trust[key] === null || agentSave.trust[key] === undefined) { continue; }
+		if (!agentSave.trust.hasOwnProperty(key)) { continue; }
+		var tempValue = agentSave.trust[key].value;
+		var tempID = agentSave.trust[key].agentID;
+		agent.trust[key] = {value: tempValue, agentID: tempID};
+	}
+	agent.isGoingToShoot = agentSave.isGoingToShoot;
+	agent.maxSpeed = agentSave.maxSpeed;
+	agent.velocity = {x: agentSave.velocity.x, y: agentSave.velocity.y};
+	agent.following = agentSave.following;
+	agent.angle = agentSave.angle;
+	agent.behaviorCount = agentSave.behaviorCount;
+	return agent;
+}
+
+// only run after gameengine entities is filled.
+function fixTrustFromSaveState(entityData) {
+	
+	for (var j = 0; j < entityData.length; j++) {
+		//console.log(entityData[j].trust);
+		for (let key in entityData[j].trust) {
+			//if (entityData[j].trust[key] === undefined) { continue; }
+			if (!entityData[j].trust.hasOwnProperty(key)) { continue; }
+			var tempValue = entityData[j].trust[key].value;
+			
+			var tempAgent = null;
+			for (var i = 0; i < entityData[j].game.entities.length; i++) {
+				// Convert Trust
+				//console.log(entityData[j].trust[key].agentID);
+				if (entityData[j].game.entities[i].id === entityData[j].trust[key].agentID) {
+					// found match
+					//console.log("ID Match");
+					tempAgent = entityData[j].game.entities[i];
+				}
+			}
+			if (tempAgent === null) {
+				entityData[j].trust[key] = undefined;
+			} else {
+				entityData[j].trust[key] = {value: tempValue, agent: tempAgent};
+			}
+		}
+		// Convert Following
+		var tempFollowing = null;
+		for (var i = 0; i < entityData[j].game.entities.length; i++) {
+			if (entityData[j].game.entities[i].id === entityData[j].following) {
+				//console.log("ID Match");
+				tempFollowing = entityData[j].game.entities[i];
+			}
+		}
+		entityData[j].following = tempFollowing;
+	}
+	
+	
+}
+
+
+
 
 function Agent(game, id, hasGun, hasKnife) {
 	this.game = game;
@@ -270,6 +360,7 @@ Agent.prototype.updatePositionWithCollision = function () {
 			this.y -= this.velocity.y;
 			this.x -= this.velocity.x;
 			this.angle += Math.PI;
+			//this.following = null;
 //			this.velocity.y = this.maxSpeed * Math.sin(angleBetween);
 //			this.velocity.x = this.maxSpeed * Math.cos(angleBetween);
 //			
