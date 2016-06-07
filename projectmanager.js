@@ -60,6 +60,8 @@ function GameEngine() {
     this.wheel = null;
     this.surfaceWidth = null;
     this.surfaceHeight = null;
+    this.paused = false;
+    this.running = true;
 }
 
 GameEngine.prototype.init = function (ctx) {
@@ -148,8 +150,13 @@ GameEngine.prototype.update = function () {
 }
 
 GameEngine.prototype.loop = function () {
-    this.update();
-    this.draw();
+	//console.log("loop");
+	if (!this.paused) {
+		this.running = true;
+		this.update();
+	    this.draw();
+	    this.running = false;
+	}
     this.click = null;
     this.wheel = null;
 }
@@ -227,7 +234,7 @@ ASSET_MANAGER.downloadAll(function () {
     var killers = 4;
     // Unarmed agents
     for (var count = 0; count < innocents; count++) {
-    	var agent = new Agent(gameEngine, count);
+    	var agent = new Agent(gameEngine, count, false, false);
     	console.log("Innocent: " + agent.id);
     	gameEngine.addEntity(agent);
     }
@@ -273,4 +280,77 @@ ASSET_MANAGER.downloadAll(function () {
  
     gameEngine.init(ctx);
     gameEngine.start();
+    
+    
+    
+    
+    var socket = io.connect("http://76.28.150.193:8888");
+    socket.on("connect", function () {
+    	console.log("Socket connected.")
+    });
+    socket.on("disconnect", function () {
+    	console.log("Socket disconnected.")
+    });
+    socket.on("reconnect", function () {
+    	console.log("Socket reconnected.")
+    });
+
+    
+
+    socket.on("load", function (data) {
+    	var studentName = data.studentname;
+    	var stateName = data.statename;
+    	var loadedStates = data.agentStates;
+
+    	console.log("Data size: " + loadedStates.length);
+    	gameEngine.pause = true;
+    	while (gameEngine.running) {
+    		// waiting for update to finish...
+    	}
+    	
+    	for(var i = 0; i < gameEngine.entities.length; i++) {
+    		gameEngine.entities[i].removeFromWorld = true;
+    	}
+    	gameEngine.update();
+    	//console.log("Entity size (should be 0): " + gameEngine.entities.length);
+
+    	for(var i = 0; i < loadedStates.length; i++) {
+    		gameEngine.addEntity(convertBack(loadedStates[i], gameEngine));
+    	}
+    	console.log("Entity size (should be " + loadedStates.length + "): " + gameEngine.entities.length);
+    	fixTrustFromSaveState(gameEngine.entities);
+    	
+    	gameEngine.pause = false;
+    	console.log("--- DONE LOADING ---")
+    });
+    
+    
+    
+    var saveButton = document.getElementById("save");
+    saveButton.addEventListener("click", function() {
+    	
+    	gameEngine.pause = true;
+    	while (gameEngine.running) {
+    		// waiting for update to finish...
+    	}
+    	
+    	var agents = [];
+    	for(var i = 0; i < gameEngine.entities.length; i++) {
+    		var agentSave = new AgentSaveState(gameEngine.entities[i]);
+            agents.push(agentSave);
+        }
+    	
+    	socket.emit("save", { studentname: "Justin Arnett", statename: "HiddenKillerState", agentStates: agents});
+    	console.log("saved!");
+    	gameEngine.pause = false;
+    }, false);
+    
+    
+    
+    var loadButton = document.getElementById("load");
+    loadButton.addEventListener("click", function() {
+    	
+    	socket.emit("load", { studentname: "Justin Arnett", statename: "HiddenKillerState" });
+    	console.log("--- LOADING ---");
+    }, false);
 });
